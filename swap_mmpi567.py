@@ -56,7 +56,7 @@ def swap_pdf_bytes(pdf_bytes, search_text):
     output.seek(0)
     return output, debug_info
 
-def swap_mmpi2():
+def swap_mmpi567():
     st.title("Pindahkan Halaman PDF MMPI-2 ke Halaman Pertama")
     
     st.info("""
@@ -129,4 +129,4 @@ def swap_mmpi2():
 
 # Jalankan aplikasi
 if __name__ == "__main__":
-    swap_mmpi2()
+    swap_mmpi567()
