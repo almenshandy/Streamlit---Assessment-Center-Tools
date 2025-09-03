@@ -59,6 +59,18 @@ def swap_pdf_bytes(pdf_bytes, search_text):
 def swap_mmpi567():
     st.title("Pindahkan Halaman PDF MMPI-2 ke Halaman Pertama")
     
+    # Tombol untuk mengarahkan ke aplikasi Flask
+    st.markdown(
+        """
+        <a href="http://192.168.1.116:2010" target="_blank">
+            <button style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                Buka Aplikasi Flask 
+            </button>
+        </a>
+        """,
+        unsafe_allow_html=True
+    )
+    
     st.info("""
     Aplikasi ini akan **memindahkan** (bukan menyalin) halaman yang mengandung 
     teks "LAPORAN TES PSIKOMETRIK MMPI-2" ke halaman pertama dalam PDF.
