@@ -20,30 +20,64 @@ def extract_text_from_pdf(uploaded_file):
         st.error(f"Error reading PDF: {str(e)}")
         return None
 
+def extract_text_between_validitas_and_internal(text):
+    """
+    Mengekstrak teks setelah "I. Validitas / Akurasi" dan sebelum "II. Internal Pribadi"
+    """
+    try:
+        # Mencari posisi "I. Validitas / Akurasi"
+        validitas_pattern = r"I\.\s*Validitas\s*/\s*Akurasi"
+        validitas_match = re.search(validitas_pattern, text, re.IGNORECASE)
+        
+        if not validitas_match:
+            return "I. Validitas / Akurasi tidak ditemukan dalam dokumen"
+        
+        # Mengambil teks setelah "I. Validitas / Akurasi"
+        text_after_validitas = text[validitas_match.end():]
+        
+        # Mencari posisi "II. Internal Pribadi"
+        internal_pattern = r"II\.\s*Internal\s*Pribadi"
+        internal_match = re.search(internal_pattern, text_after_validitas, re.IGNORECASE)
+        
+        if internal_match:
+            # Ambil teks antara keduanya
+            extracted_text = text_after_validitas[:internal_match.start()].strip()
+            return extracted_text
+        else:
+            # Jika tidak ada "II. Internal Pribadi", ambil sampai akhir
+            return text_after_validitas.strip()
+            
+    except Exception as e:
+        return f"Error dalam ekstraksi teks dari bagian validitas: {str(e)}"
+
 def extract_text_after_kesimpulan(text):
     """
     Mengekstrak teks setelah "2." dan sebelum "3." yang berada setelah "VI. Kesimpulan"
+    Jika tidak ditemukan, cari di bagian antara "I. Validitas / Akurasi" dan "II. Internal Pribadi"
     """
     try:
         # Mencari posisi "VI. Kesimpulan"
         kesimpulan_pattern = r"VI\.\s*Kesimpulan"
         kesimpulan_match = re.search(kesimpulan_pattern, text, re.IGNORECASE)
         
-        if not kesimpulan_match:
-            return "VI. Kesimpulan tidak ditemukan dalam dokumen"
+        if kesimpulan_match:
+            # Mengambil teks setelah "VI. Kesimpulan"
+            text_after_kesimpulan = text[kesimpulan_match.end():]
+            
+            # Mencari pola "2." dan "3."
+            pattern_2 = r"2\.\s*(.*?)(?=3\.|$)"
+            match = re.search(pattern_2, text_after_kesimpulan, re.DOTALL | re.IGNORECASE)
+            
+            if match:
+                extracted_text = match.group(1).strip()
+                return extracted_text
         
-        # Mengambil teks setelah "VI. Kesimpulan"
-        text_after_kesimpulan = text[kesimpulan_match.end():]
+        # Jika tidak ditemukan di bagian kesimpulan, cari di bagian validitas
+        validitas_text = extract_text_between_validitas_and_internal(text)
+        if validitas_text and "tidak ditemukan" not in validitas_text and "Error" not in validitas_text:
+            return validitas_text
         
-        # Mencari pola "2." dan "3."
-        pattern_2 = r"2\.\s*(.*?)(?=3\.|$)"
-        match = re.search(pattern_2, text_after_kesimpulan, re.DOTALL | re.IGNORECASE)
-        
-        if match:
-            extracted_text = match.group(1).strip()
-            return extracted_text
-        else:
-            return "Teks setelah '2.' tidak ditemukan setelah VI. Kesimpulan"
+        return "Teks tidak ditemukan di bagian kesimpulan maupun bagian validitas"
             
     except Exception as e:
         return f"Error dalam ekstraksi teks: {str(e)}"
@@ -57,12 +91,18 @@ def classify_condition(extracted_text):
     
     text_lower = extracted_text.lower()
     
+    # Cek kondisi akurasi dan konsistensi terlebih dahulu
+    if "hasil tes ini tidak konsisten, tidak akurat" in text_lower:
+        return "Tidak Konsisten & Tidak Akurat"
+    elif "hasil tes ini konsisten, tetapi tidak akurat  dan tidak dapat dipercaya, " in text_lower:
+        return "Tidak Akurat"
+    
     # Cek kondisi stres
-    if "tidak mengalami stres" in text_lower:
+    elif "tidak mengalami stres" in text_lower:
         return "Tidak Stres"
     elif "stres berat" in text_lower or "mengalami stres berat" in text_lower:
         return "Stres Berat"
-    elif "stres ringan" in text_lower or "mengalami stres ringan" in text_lower:
+    elif "stress ringan" in text_lower or "mengalami stres ringan" in text_lower:
         return "Stres Ringan"
     elif "stres sedang" in text_lower or "mengalami stres sedang" in text_lower:
         return "Stres Sedang"
